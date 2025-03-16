@@ -10,8 +10,8 @@ from huggingface_hub import PyTorchModelHubMixin, hf_hub_download
 from torch.distributed import init_process_group, destroy_process_group
 from torch.nn.parallel import DistributedDataParallel as DDP
 import torch.distributed as dist
-from depth_anything.HRWSI.data.hrwsi import get_hrwsi_loader
-from depth_anything.blocks import FeatureFusionBlock, _make_scratch
+from HRWSI.data.hrwsi import get_hrwsi_loader
+from blocks import FeatureFusionBlock, _make_scratch
 
 
 def _make_fusion_block(features, use_bn, size = None):
