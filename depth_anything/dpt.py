@@ -458,13 +458,13 @@ if __name__ == '__main__':
                             input_img = np.clip(input_img, 0, 1)
                             
                             plt.imsave(f"prediction_images/input_batch{batch_idx}_sample{val_idx}_{i}.png", input_img)
-                        
-                        # Log input, prediction, gt images
-                        writer.add_images('Prediction', pred, epoch * len(dataloader) + batch_idx)
-                        writer.add_images('Input', image, epoch * len(dataloader) + batch_idx)
-                        writer.add_images('GT Depth', depth, epoch * len(dataloader) + batch_idx)
-                
-                        print(f"Saved prediction images for batch {batch_idx}, validation sample {val_idx}")
+
+                        if master_process:
+                            # Log input, prediction, gt images
+                            writer.add_images('Prediction', pred, epoch * len(dataloader) + batch_idx)
+                            writer.add_images('Input', image, epoch * len(dataloader) + batch_idx)
+                            writer.add_images('GT Depth', depth, epoch * len(dataloader) + batch_idx)
+                            print(f"Saved prediction images for batch {batch_idx}, validation sample {val_idx}")
                 
 
             model.train()
@@ -487,10 +487,11 @@ if __name__ == '__main__':
                 dist.all_reduce(loss_accum, op=dist.ReduceOp.AVG)
             norm = torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
 
-            # Log scalar values (loss)
-            writer.add_scalar('Loss/train', loss_accum.item(), epoch * len(dataloader) + batch_idx)
-            writer.add_scalar('Gradient/norm', norm, epoch * len(dataloader) + batch_idx)
-            writer.add_scalar('LR', scheduler.get_last_lr()[0], epoch * len(dataloader) + batch_idx)
+            if master_process:
+                # Log scalar values (loss)
+                writer.add_scalar('Loss/train', loss_accum.item(), epoch * len(dataloader) + batch_idx)
+                writer.add_scalar('Gradient/norm', norm, epoch * len(dataloader) + batch_idx)
+                writer.add_scalar('LR', scheduler.get_last_lr()[0], epoch * len(dataloader) + batch_idx)
             
             optimizer.step()
             scheduler.step()
