@@ -397,7 +397,7 @@ if __name__ == '__main__':
     model = DepthAnything({'encoder': 'vits', 'features': 64, 'out_channels': [48, 96, 192, 384], 'use_bn': False, 'use_clstoken': False})
     model.to(device)
     if ddp:
-        model = DDP(model, device_ids=[ddp_local_rank])
+        model = DDP(model, device_ids=[ddp_local_rank], find_unused_parameters=True)
     raw_model = model.module if ddp else model  # always contains the "raw" unwrapped model
     # model = torch.compile(model)
     optimizer, scheduler = configure_optimizer(raw_model, 5e-5, 0.1, device_type, max_epochs=max_steps, min_lr_ratio=0.1, warmup_epochs=warmup_steps)
