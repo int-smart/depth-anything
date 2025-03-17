@@ -10,6 +10,7 @@ from huggingface_hub import PyTorchModelHubMixin, hf_hub_download
 from torch.distributed import init_process_group, destroy_process_group
 from torch.nn.parallel import DistributedDataParallel as DDP
 import torch.distributed as dist
+from torch.utils.tensorboard import SummaryWriter
 from HRWSI.data.hrwsi import get_hrwsi_loader
 from blocks import FeatureFusionBlock, _make_scratch
 
@@ -325,6 +326,8 @@ def configure_optimizer(model, learning_rate, weight_decay, device_type, max_epo
 
     return optim, scheduler
 
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -401,6 +404,8 @@ if __name__ == '__main__':
     raw_model = model.module if ddp else model  # always contains the "raw" unwrapped model
     # model = torch.compile(model)
     optimizer, scheduler = configure_optimizer(raw_model, 5e-5, 0.1, device_type, max_epochs=max_steps, min_lr_ratio=0.1, warmup_epochs=warmup_steps)
+    # Create a SummaryWriter instance
+    writer = SummaryWriter(log_dir="runs/depth_anything_experiment")
 
     for epoch in range(max_epochs):
         for batch_idx, batch in enumerate(dataloader):
@@ -433,7 +438,7 @@ if __name__ == '__main__':
                             # If prediction has a channel dimension, remove it for grayscale image
                             if len(pred_img.shape) > 2:
                                 pred_img = pred_img.squeeze()
-                            
+
                             # Save using PIL
                             img = Image.fromarray(pred_img)
                             img.save(f"prediction_images/pred_batch{batch_idx}_sample{val_idx}_{i}.png")
@@ -454,6 +459,11 @@ if __name__ == '__main__':
                             
                             plt.imsave(f"prediction_images/input_batch{batch_idx}_sample{val_idx}_{i}.png", input_img)
                         
+                        # Log input, prediction, gt images
+                        writer.add_images('Prediction', pred, epoch * len(dataloader) + batch_idx)
+                        writer.add_images('Input', image, epoch * len(dataloader) + batch_idx)
+                        writer.add_images('GT Depth', depth, epoch * len(dataloader) + batch_idx)
+                
                         print(f"Saved prediction images for batch {batch_idx}, validation sample {val_idx}")
                 
 
@@ -471,14 +481,25 @@ if __name__ == '__main__':
             with torch.autocast(device_type=device_type, dtype=torch.bfloat16):
                 pred, loss = model(image, depth)
             loss_accum += loss.detach()
+            
             loss.backward()
             if ddp:
                 dist.all_reduce(loss_accum, op=dist.ReduceOp.AVG)
             norm = torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
+
+            # Log scalar values (loss)
+            writer.add_scalar('Loss/train', loss_accum.item(), epoch * len(dataloader) + batch_idx)
+            writer.add_scalar('Gradient/norm', norm, epoch * len(dataloader) + batch_idx)
+            writer.add_scalar('LR', scheduler.get_last_lr()[0], epoch * len(dataloader) + batch_idx)
+            
             optimizer.step()
             scheduler.step()
             if master_process:
                 print(f"Epoch: {epoch}, Batch: {batch_idx}, Loss: {loss_accum.item():.4f}, norm: {norm:.4f}")
+
+    # Close the writer when done
+    writer.close()
+
     if ddp:
         destroy_process_group()
     # torch.Size([3, 642, 900])
