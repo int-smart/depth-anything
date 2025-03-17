@@ -13,7 +13,7 @@ import torch.distributed as dist
 from torch.utils.tensorboard import SummaryWriter
 from HRWSI.data.hrwsi import get_hrwsi_loader
 from blocks import FeatureFusionBlock, _make_scratch
-
+from util.activationstats import ActivationStats
 
 def _make_fusion_block(features, use_bn, size = None):
     return FeatureFusionBlock(
@@ -406,6 +406,7 @@ if __name__ == '__main__':
     optimizer, scheduler = configure_optimizer(raw_model, 5e-5, 0.1, device_type, max_epochs=max_steps, min_lr_ratio=0.1, warmup_epochs=warmup_steps)
     # Create a SummaryWriter instance
     writer = SummaryWriter(log_dir="runs/depth_anything_experiment")
+    act_stats = ActivationStats(writer, model, None)
 
     for epoch in range(max_epochs):
         for batch_idx, batch in enumerate(dataloader):
@@ -464,6 +465,7 @@ if __name__ == '__main__':
                             writer.add_images('Prediction', pred.unsqueeze(1)  , epoch * len(dataloader) + batch_idx)
                             writer.add_images('Input', image, epoch * len(dataloader) + batch_idx)
                             writer.add_images('GT Depth', depth, epoch * len(dataloader) + batch_idx)
+                            act_stats.log_stats(epoch * len(dataloader) + batch_idx)
                             print(f"Saved prediction images for batch {batch_idx}, validation sample {val_idx}")
                 
 
@@ -500,7 +502,9 @@ if __name__ == '__main__':
 
     # Close the writer when done
     writer.close()
-
+    # Clean up hooks when done
+    act_stats.close()
+    
     if ddp:
         destroy_process_group()
     # torch.Size([3, 642, 900])
