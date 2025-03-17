@@ -409,7 +409,7 @@ if __name__ == '__main__':
 
     for epoch in range(max_epochs):
         for batch_idx, batch in enumerate(dataloader):
-            if batch_idx > 0 and batch_idx % 1000 == 0:
+            if batch_idx > 0 and batch_idx % 10 == 0:
                 model.eval()
                 with torch.no_grad():
                     for val_idx, batch in enumerate(dataloader):
