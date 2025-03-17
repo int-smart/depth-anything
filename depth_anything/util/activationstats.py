@@ -43,7 +43,7 @@ class ActivationStats:
         """Log activation statistics to TensorBoard"""
         for name, activation in self.activations.items():
             # Calculate statistics
-            act_flat = activation.view(activation.size(0), -1)
+            act_flat = activation.reshape(activation.size(0), -1)
             
             # Log scalar statistics
             self.writer.add_scalar(f'act_stats/{name}/mean', act_flat.mean().item(), step)
