@@ -461,7 +461,7 @@ if __name__ == '__main__':
 
                         if master_process:
                             # Log input, prediction, gt images
-                            writer.add_images('Prediction', pred, epoch * len(dataloader) + batch_idx)
+                            writer.add_images('Prediction', pred.unsqueeze(1)  , epoch * len(dataloader) + batch_idx)
                             writer.add_images('Input', image, epoch * len(dataloader) + batch_idx)
                             writer.add_images('GT Depth', depth, epoch * len(dataloader) + batch_idx)
                             print(f"Saved prediction images for batch {batch_idx}, validation sample {val_idx}")
