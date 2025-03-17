@@ -344,11 +344,6 @@ if __name__ == '__main__':
     )
     args = parser.parse_args()
     
-    max_epochs = 2
-    batch_size = args.batch_size
-    dataset_size = 20378//batch_size
-    warmup_steps = 0.33*dataset_size*max_epochs
-    max_steps = dataset_size*max_epochs
     ddp = int(os.environ.get("RANK", -1)) != -1
     if ddp:
         # use of DDP atm demands CUDA, we set the device appropriately according to rank
@@ -377,7 +372,12 @@ if __name__ == '__main__':
         print(f"using device: {device}")
 
     device_type = "cuda" if device.startswith("cuda") else "cpu"
-
+    max_epochs = 2
+    batch_size = args.batch_size
+    dataset_size = 20378//(batch_size*ddp_world_size)
+    warmup_steps = 0.33*dataset_size*max_epochs
+    max_steps = dataset_size*max_epochs
+    
     # Create a directory to save the images if it doesn't exist
     os.makedirs("prediction_images", exist_ok=True)
 
