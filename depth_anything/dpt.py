@@ -342,6 +342,12 @@ if __name__ == '__main__':
         type=int,
         help="batch size for training"
     )
+    parser.add_argument(
+        "--data_dir",
+        default="/kaggle/input/depthdata",
+        type=str,
+        help="directory containing the training data"
+    )    
     args = parser.parse_args()
     
     ddp = int(os.environ.get("RANK", -1)) != -1
@@ -387,7 +393,7 @@ if __name__ == '__main__':
     # Create the dataloader
     # Create dataloader with DDP support
     dataloader = get_hrwsi_loader(
-        data_dir_root="/kaggle/working/HR-WSI",
+        data_dir_root=args.data_dir,
         resize_shape=(518,518),  # Example resize shape
         batch_size=batch_size,  # Adjust as needed
         ddp=True,  # Pass the DDP flag
