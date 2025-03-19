@@ -301,6 +301,7 @@ def configure_optimizer(model, learning_rate, weight_decay, device_type, max_epo
         print(f"num fast learning parameter tensors: {len(fast_learn_params)}, with {num_fast_params:,} parameters")
     fused_available = "fused" in inspect.signature(torch.optim.AdamW).parameters
     use_fused = fused_available and device_type == "cuda"
+    use_fused = False
     if master_process:
         print(f"using fused AdamW: {use_fused}")
     optim = torch.optim.AdamW(
@@ -472,6 +473,7 @@ if __name__ == '__main__':
                             writer.add_images('Input', image, epoch * len(dataloader) + batch_idx)
                             writer.add_images('GT Depth', depth, epoch * len(dataloader) + batch_idx)
                             act_stats.log_stats(epoch * len(dataloader) + batch_idx)
+                            act_stats.visualize_activations(step=epoch * len(dataloader) + batch_idx, max_channels=384)
                             print(f"Saved prediction images for batch {batch_idx}, validation sample {val_idx}")
                 
 
