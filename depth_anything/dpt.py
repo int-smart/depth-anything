@@ -391,15 +391,27 @@ if __name__ == '__main__':
     fix_random_seed(42)
     torch.set_float32_matmul_precision("high")
 
-    # Create the dataloader
-    # Create dataloader with DDP support
-    dataloader = get_hrwsi_loader(
+    # Create the train_dataloader
+    # Create train_dataloader with DDP support
+    train_dataloader = get_hrwsi_loader(
         data_dir_root=args.data_dir,
-        resize_shape=(518,518),  # Example resize shape
+        resize_shape=(512,512),  # Example resize shape
         batch_size=batch_size,  # Adjust as needed
         ddp=True,  # Pass the DDP flag
         ddp_rank=ddp_rank,
         ddp_world_size=ddp_world_size,
+        num_workers=4,  # Adjust based on your system
+        pin_memory=True
+    )
+
+    valid_dataloader = get_hrwsi_loader(
+        data_dir_root=args.data_dir,
+        resize_shape=(512,512),  # Example resize shape
+        batch_size=batch_size,  # Adjust as needed
+        ddp=True,  # Pass the DDP flag
+        ddp_rank=ddp_rank,
+        ddp_world_size=ddp_world_size,
+        type="valid",
         num_workers=4,  # Adjust based on your system
         pin_memory=True
     )
@@ -416,11 +428,11 @@ if __name__ == '__main__':
     act_stats = ActivationStats(writer, model, None)
 
     for epoch in range(max_epochs):
-        for batch_idx, batch in enumerate(dataloader):
+        for batch_idx, batch in enumerate(train_dataloader):
             if batch_idx > 0 and batch_idx % 100 == 0:
                 model.eval()
                 with torch.no_grad():
-                    for val_idx, batch in enumerate(dataloader):
+                    for val_idx, batch in enumerate(train_dataloader):
                         if val_idx >= 1:  # Limit to 5 validation samples to avoid too many images
                             break
                         image = batch['image']  # Shape: [B,C,H,W]
@@ -469,11 +481,11 @@ if __name__ == '__main__':
 
                         if master_process:
                             # Log input, prediction, gt images
-                            writer.add_images('Prediction', pred.unsqueeze(1)  , epoch * len(dataloader) + batch_idx)
-                            writer.add_images('Input', image, epoch * len(dataloader) + batch_idx)
-                            writer.add_images('GT Depth', depth, epoch * len(dataloader) + batch_idx)
-                            act_stats.log_stats(epoch * len(dataloader) + batch_idx)
-                            act_stats.visualize_activations(step=epoch * len(dataloader) + batch_idx, max_channels=384)
+                            writer.add_images('Prediction', pred.unsqueeze(1)  , epoch * len(train_dataloader) + batch_idx)
+                            writer.add_images('Input', image, epoch * len(train_dataloader) + batch_idx)
+                            writer.add_images('GT Depth', depth, epoch * len(train_dataloader) + batch_idx)
+                            act_stats.log_stats(epoch * len(train_dataloader) + batch_idx)
+                            act_stats.visualize_activations(step=epoch * len(train_dataloader) + batch_idx, max_channels=384)
                             print(f"Saved prediction images for batch {batch_idx}, validation sample {val_idx}")
                 
 
@@ -499,9 +511,9 @@ if __name__ == '__main__':
 
             if master_process:
                 # Log scalar values (loss)
-                writer.add_scalar('Loss/train', loss_accum.item(), epoch * len(dataloader) + batch_idx)
-                writer.add_scalar('Gradient/norm', norm, epoch * len(dataloader) + batch_idx)
-                writer.add_scalar('LR', scheduler.get_last_lr()[0], epoch * len(dataloader) + batch_idx)
+                writer.add_scalar('Loss/train', loss_accum.item(), epoch * len(train_dataloader) + batch_idx)
+                writer.add_scalar('Gradient/norm', norm, epoch * len(train_dataloader) + batch_idx)
+                writer.add_scalar('LR', scheduler.get_last_lr()[0], epoch * len(train_dataloader) + batch_idx)
             
             optimizer.step()
             scheduler.step()

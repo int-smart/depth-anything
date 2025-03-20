@@ -59,6 +59,17 @@ class ActivationStats:
             zeros = (act_flat == 0).float().mean().item() * 100
             self.writer.add_scalar(f'act_stats/{name}/sparsity_pct', zeros, step)
 
+            # Add dead neuron tracking
+            # Calculate mean activation per neuron across the batch
+            neuron_means = act_flat.mean(dim=0)
+            
+            # Count neurons with very low activation (using a small threshold)
+            threshold = 1e-6  # Can be adjusted based on your needs
+            dead_neurons = (neuron_means.abs() < threshold).float().mean().item() * 100
+            
+            # Log percentage of dead neurons
+            self.writer.add_scalar(f'act_stats/{name}/dead_neurons_pct', dead_neurons, step)
+
     def visualize_activations(self, step, max_channels=64, batch_idx=0):
         """
         Visualize activations by creating a grid of feature maps and log to TensorBoard

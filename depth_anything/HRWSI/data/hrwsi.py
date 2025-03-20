@@ -81,13 +81,13 @@ class ToTensor(object):
 
 
 class HRWSI(Dataset):
-    def __init__(self, data_dir_root, resize_shape):
+    def __init__(self, data_dir_root, resize_shape, type):
         import csv
 
         # image paths are of the form <data_dir_root>/{outleft, depthmap}/*.png
         self.image_files, self.depth_files = [], []
-
-        with open(f"{data_dir_root}/train.csv", 'r') as f:
+        csv_loc = f"{data_dir_root}/train.csv" if type == "train" else f"{data_dir_root}/validation.csv"
+        with open(csv_loc, 'r') as f:
             csv_reader = csv.reader(f, delimiter=',')
             next(csv_reader)  # Skip the header row
             for row in csv_reader:
@@ -118,10 +118,10 @@ class HRWSI(Dataset):
         return len(self.image_files)
 
 
-def get_hrwsi_loader(data_dir_root, resize_shape, batch_size=1, ddp=False, ddp_rank=0, ddp_world_size=1, **kwargs):
+def get_hrwsi_loader(data_dir_root, resize_shape, batch_size=1, ddp=False, ddp_rank=0, ddp_world_size=1, type="train", **kwargs):
     # dataset = HRWSI(data_dir_root, resize_shape)
     # return DataLoader(dataset, batch_size, **kwargs)
-    dataset = HRWSI(data_dir_root, resize_shape)
+    dataset = HRWSI(data_dir_root, resize_shape, type)
     
     # Create sampler for DDP
     if ddp:
