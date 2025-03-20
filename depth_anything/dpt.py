@@ -395,7 +395,7 @@ if __name__ == '__main__':
     # Create train_dataloader with DDP support
     train_dataloader = get_hrwsi_loader(
         data_dir_root=args.data_dir,
-        resize_shape=(512,512),  # Example resize shape
+        resize_shape=(518,518),  # Example resize shape
         batch_size=batch_size,  # Adjust as needed
         ddp=True,  # Pass the DDP flag
         ddp_rank=ddp_rank,
@@ -406,7 +406,7 @@ if __name__ == '__main__':
 
     valid_dataloader = get_hrwsi_loader(
         data_dir_root=args.data_dir,
-        resize_shape=(512,512),  # Example resize shape
+        resize_shape=(518,518),  # Example resize shape
         batch_size=batch_size,  # Adjust as needed
         ddp=True,  # Pass the DDP flag
         ddp_rank=ddp_rank,
