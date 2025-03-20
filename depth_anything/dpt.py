@@ -481,6 +481,7 @@ if __name__ == '__main__':
 
                         if master_process:
                             # Log input, prediction, gt images
+                            writer.add_scalar('Loss/validation', loss.detach().item(), epoch * len(train_dataloader) + batch_idx)
                             writer.add_images('Prediction', pred.unsqueeze(1)  , epoch * len(train_dataloader) + batch_idx)
                             writer.add_images('Input', image, epoch * len(train_dataloader) + batch_idx)
                             writer.add_images('GT Depth', depth, epoch * len(train_dataloader) + batch_idx)
@@ -511,7 +512,7 @@ if __name__ == '__main__':
 
             if master_process:
                 # Log scalar values (loss)
-                writer.add_scalar('Loss/train', loss_accum.item(), epoch * len(train_dataloader) + batch_idx)
+                writer.add_scalar('Loss/training', loss_accum.item(), epoch * len(train_dataloader) + batch_idx)
                 writer.add_scalar('Gradient/norm', norm, epoch * len(train_dataloader) + batch_idx)
                 writer.add_scalar('LR', scheduler.get_last_lr()[0], epoch * len(train_dataloader) + batch_idx)
             
