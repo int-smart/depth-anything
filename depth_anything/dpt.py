@@ -432,11 +432,11 @@ if __name__ == '__main__':
             if batch_idx > 0 and batch_idx % 100 == 0:
                 model.eval()
                 with torch.no_grad():
-                    for val_idx, batch in enumerate(train_dataloader):
+                    for val_idx, val_batch in enumerate(valid_dataloader):
                         if val_idx >= 1:  # Limit to 5 validation samples to avoid too many images
                             break
-                        image = batch['image']  # Shape: [B,C,H,W]
-                        depth = batch['depth']
+                        image = val_batch['image']  # Shape: [B,C,H,W]
+                        depth = val_batch['depth']
 
                         image = image.to(device)
                         depth = depth.to(device)
