@@ -429,7 +429,7 @@ if __name__ == '__main__':
 
     for epoch in range(max_epochs):
         for batch_idx, batch in enumerate(train_dataloader):
-            if batch_idx > 0 and batch_idx % 100 == 0:
+            if batch_idx > 0 and batch_idx % 10 == 0:
                 model.eval()
                 with torch.no_grad():
                     for val_idx, val_batch in enumerate(valid_dataloader):
@@ -486,7 +486,7 @@ if __name__ == '__main__':
                             writer.add_images('Input', image, epoch * len(train_dataloader) + batch_idx)
                             writer.add_images('GT Depth', depth, epoch * len(train_dataloader) + batch_idx)
                             act_stats.log_stats(epoch * len(train_dataloader) + batch_idx)
-                            act_stats.visualize_activations(step=epoch * len(train_dataloader) + batch_idx, max_channels=384)
+                            act_stats.visualize_activations(step=epoch * len(train_dataloader) + batch_idx, max_channels=384, batch_idx=torch.randint(0, image.shape[0], (1,)).item())
                             print(f"Saved prediction images for batch {batch_idx}, validation sample {val_idx}")
                 
 
