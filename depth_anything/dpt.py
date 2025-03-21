@@ -460,6 +460,7 @@ if __name__ == '__main__':
                             # If prediction has a channel dimension, remove it for grayscale image
                             if len(pred_img.shape) > 2:
                                 pred_img = pred_img.squeeze()
+                            print(f"Prediction min: {pred_img.min()}, max: {pred_img.max()}, mean: {pred_img.mean()}")
 
                             # Save using PIL
                             img = Image.fromarray(pred_img)
@@ -505,6 +506,8 @@ if __name__ == '__main__':
             # Mixed precision training
             with torch.autocast(device_type=device_type, dtype=torch.bfloat16):
                 pred, loss = model(image, depth)
+            print(f"Prediction min: {pred.min()}, max: {pred.max()}, mean: {pred.mean()}")
+            
             loss_accum += loss.detach()
             
             loss.backward()
