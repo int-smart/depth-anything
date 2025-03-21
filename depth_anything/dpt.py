@@ -381,8 +381,7 @@ if __name__ == '__main__':
     device_type = "cuda" if device.startswith("cuda") else "cpu"
     max_epochs = 500
     batch_size = args.batch_size
-    # dataset_size = 20378//(batch_size*ddp_world_size)
-    dataset_size = 20//(batch_size*ddp_world_size)
+    dataset_size = 20378//(batch_size*ddp_world_size)
     warmup_steps = 0.33*dataset_size*max_epochs
     max_steps = dataset_size*max_epochs
     
@@ -430,12 +429,10 @@ if __name__ == '__main__':
 
     for epoch in range(max_epochs):
         for batch_idx, batch in enumerate(train_dataloader):
-            if batch_idx > 1:
-                break
-            if batch_idx > 0 and batch_idx % 1 == 0 and epoch % 100 == 0:
+            if batch_idx > 0 and batch_idx % 100 == 0:
                 model.eval()
                 with torch.no_grad():
-                    for val_idx, val_batch in enumerate(train_dataloader):
+                    for val_idx, val_batch in enumerate(valid_dataloader):
                         if val_idx >= 1:  # Limit to 5 validation samples to avoid too many images
                             break
                         image = val_batch['image']  # Shape: [B,C,H,W]
