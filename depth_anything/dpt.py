@@ -486,7 +486,8 @@ if __name__ == '__main__':
                         if master_process:
                             # Log input, prediction, gt images
                             writer.add_scalar('Loss/validation', loss.detach().item(), epoch * len(train_dataloader) + batch_idx)
-                            writer.add_images('Prediction', pred.unsqueeze(1)  , epoch * len(train_dataloader) + batch_idx)
+                            pred_normalized = (pred - pred.min()) / (pred.max() - pred.min() + 1e-8)  # add small epsilon to avoid division by zero
+                            writer.add_images('Prediction', pred_normalized.unsqueeze(1)  , epoch * len(train_dataloader) + batch_idx)
                             writer.add_images('Input', image, epoch * len(train_dataloader) + batch_idx)
                             writer.add_images('GT Depth', depth, epoch * len(train_dataloader) + batch_idx)
                             act_stats.log_stats(epoch * len(train_dataloader) + batch_idx)
