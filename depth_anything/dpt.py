@@ -379,7 +379,7 @@ if __name__ == '__main__':
         print(f"using device: {device}")
 
     device_type = "cuda" if device.startswith("cuda") else "cpu"
-    max_epochs = 2
+    max_epochs = 20
     batch_size = args.batch_size
     dataset_size = 20378//(batch_size*ddp_world_size)
     warmup_steps = 0.33*dataset_size*max_epochs
@@ -429,10 +429,12 @@ if __name__ == '__main__':
 
     for epoch in range(max_epochs):
         for batch_idx, batch in enumerate(train_dataloader):
+            if batch_idx > 101:
+                break
             if batch_idx > 0 and batch_idx % 100 == 0:
                 model.eval()
                 with torch.no_grad():
-                    for val_idx, val_batch in enumerate(valid_dataloader):
+                    for val_idx, val_batch in enumerate(train_dataloader):
                         if val_idx >= 1:  # Limit to 5 validation samples to avoid too many images
                             break
                         image = val_batch['image']  # Shape: [B,C,H,W]
@@ -520,7 +522,16 @@ if __name__ == '__main__':
             scheduler.step()
             if master_process:
                 print(f"Epoch: {epoch}, Batch: {batch_idx}, Loss: {loss_accum.item():.4f}, norm: {norm:.4f}")
-
+        train_dataloader = get_hrwsi_loader(
+            data_dir_root=args.data_dir,
+            resize_shape=(518,518),  # Example resize shape
+            batch_size=batch_size,  # Adjust as needed
+            ddp=True,  # Pass the DDP flag
+            ddp_rank=ddp_rank,
+            ddp_world_size=ddp_world_size,
+            num_workers=4,  # Adjust based on your system
+            pin_memory=True
+        )
     # Close the writer when done
     writer.close()
     # Clean up hooks when done
