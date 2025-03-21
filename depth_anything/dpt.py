@@ -461,6 +461,7 @@ if __name__ == '__main__':
                             if len(pred_img.shape) > 2:
                                 pred_img = pred_img.squeeze()
                             print(f"Prediction min: {pred_img.min()}, max: {pred_img.max()}, mean: {pred_img.mean()}")
+                            print(f"Prediction unique elements: {np.unique(pred_img)}")
 
                             # Save using PIL
                             img = Image.fromarray(pred_img)
