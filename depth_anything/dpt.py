@@ -554,10 +554,9 @@ if __name__ == '__main__':
             scheduler.step()
             if master_process:
                 print(f"Epoch: {epoch}, Batch: {batch_idx}, Loss: {loss_accum.item():.4f}, norm: {norm:.4f}")
-            break
         
         # Save checkpoint
-        if master_process and epoch % 10 == 0:
+        if master_process and (epoch % 100 == 0 or epoch == max_epochs-1):
             checkpoint = {
                 'epoch': epoch,
                 'model_state_dict': model.state_dict() if not ddp else model.module.state_dict(),
