@@ -453,6 +453,9 @@ if __name__ == '__main__':
         epoch = checkpoint['epoch']
     
     while epoch < max_epochs:
+        # Add this line to set the epoch for the sampler
+        if ddp and hasattr(train_dataloader, 'sampler') and hasattr(train_dataloader.sampler, 'set_epoch'):
+            train_dataloader.sampler.set_epoch(epoch)
         for batch_idx, batch in enumerate(train_dataloader):
             if batch_idx > 0 and batch_idx % 1000 == 0:
                 model.eval()

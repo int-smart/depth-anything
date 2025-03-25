@@ -130,11 +130,12 @@ def get_hrwsi_loader(data_dir_root, resize_shape, batch_size=1, ddp=False, ddp_r
             dataset,
             num_replicas=ddp_world_size,
             rank=ddp_rank,
-            shuffle=False,
+            shuffle=(type=="train"),
             seed=42  # You can make this configurable
         )
         # When using a distributed sampler, don't shuffle in the DataLoader
         kwargs['shuffle'] = False
         kwargs['sampler'] = sampler
-    
+    else:
+        kwargs['shuffle'] = (type=="train")
     return DataLoader(dataset, batch_size, **kwargs)
