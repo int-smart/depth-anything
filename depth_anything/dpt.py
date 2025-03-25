@@ -348,6 +348,12 @@ if __name__ == '__main__':
         default="/kaggle/input/depthdata",
         type=str,
         help="directory containing the training data"
+    )
+    parser.add_argument(
+        "--checkpoint_path",
+        default="/kaggle/working/depth-anything/checkpoints/",
+        type=str,
+        help="directory containing the checkpoints"
     )    
     args = parser.parse_args()
     
@@ -384,6 +390,7 @@ if __name__ == '__main__':
     dataset_size = 20378//(batch_size*ddp_world_size)
     warmup_steps = 0.33*dataset_size*max_epochs
     max_steps = dataset_size*max_epochs
+    epoch = 0
     
     # Create a directory to save the images if it doesn't exist
     os.makedirs("prediction_images", exist_ok=True)
@@ -428,7 +435,23 @@ if __name__ == '__main__':
     writer = SummaryWriter(log_dir="runs/depth_anything_experiment")
     act_stats = ActivationStats(writer, model, None)
 
-    for epoch in range(max_epochs):
+    if ".pt" in args.checkpoint_path:
+        map_location = f'cuda:{ddp_local_rank}' if ddp else device
+        checkpoint = torch.load(args.checkpoint_path, map_location=map_location)
+    
+        # Load model weights
+        raw_model.load_state_dict(checkpoint['model_state_dict'])
+        
+        # Load optimizer state
+        optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+        
+        # Load scheduler state
+        scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
+        
+        # Get the epoch number
+        epoch = checkpoint['epoch']
+    
+    while epoch < max_epochs:
         for batch_idx, batch in enumerate(train_dataloader):
             if batch_idx > 0 and batch_idx % 1000 == 0:
                 model.eval()
@@ -531,7 +554,7 @@ if __name__ == '__main__':
             break
         
         # Save checkpoint
-        if master_process:
+        if master_process and epoch % 10 == 0:
             checkpoint = {
                 'epoch': epoch,
                 'model_state_dict': model.state_dict() if not ddp else model.module.state_dict(),
@@ -543,6 +566,7 @@ if __name__ == '__main__':
 
             torch.save(checkpoint, f'checkpoints/model_epoch_{epoch}.pt')
             print(f"Saved checkpoint for epoch {epoch}")
+        epoch += 1
         
     # Close the writer when done
     writer.close()
