@@ -387,7 +387,8 @@ if __name__ == '__main__':
     
     # Create a directory to save the images if it doesn't exist
     os.makedirs("prediction_images", exist_ok=True)
-
+    os.makedirs("checkpoints", exist_ok=True)
+    
     fix_random_seed(42)
     torch.set_float32_matmul_precision("high")
 
@@ -525,16 +526,21 @@ if __name__ == '__main__':
             scheduler.step()
             if master_process:
                 print(f"Epoch: {epoch}, Batch: {batch_idx}, Loss: {loss_accum.item():.4f}, norm: {norm:.4f}")
-        train_dataloader = get_hrwsi_loader(
-            data_dir_root=args.data_dir,
-            resize_shape=(518,518),  # Example resize shape
-            batch_size=batch_size,  # Adjust as needed
-            ddp=True,  # Pass the DDP flag
-            ddp_rank=ddp_rank,
-            ddp_world_size=ddp_world_size,
-            num_workers=4,  # Adjust based on your system
-            pin_memory=True
-        )
+            break
+        
+        # Save checkpoint
+        if master_process:
+            checkpoint = {
+                'epoch': epoch,
+                'model_state_dict': model.state_dict() if not ddp else model.module.state_dict(),
+                'optimizer_state_dict': optimizer.state_dict(),
+                'scheduler_state_dict': scheduler.state_dict(),
+                'loss': loss_accum.item(),
+            }
+
+            torch.save(checkpoint, f'checkpoints/model_epoch_{epoch}.pt')
+            print(f"Saved checkpoint for epoch {epoch}")
+        
     # Close the writer when done
     writer.close()
     # Clean up hooks when done
