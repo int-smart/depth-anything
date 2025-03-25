@@ -391,6 +391,7 @@ if __name__ == '__main__':
     warmup_steps = 0.33*dataset_size*max_epochs
     max_steps = dataset_size*max_epochs
     epoch = 0
+    validation_losses = []
     
     # Create a directory to save the images if it doesn't exist
     os.makedirs("prediction_images", exist_ok=True)
@@ -455,7 +456,6 @@ if __name__ == '__main__':
         for batch_idx, batch in enumerate(train_dataloader):
             if batch_idx > 0 and batch_idx % 1000 == 0:
                 model.eval()
-                validation_losses = []
                 with torch.no_grad():
                     for val_idx, val_batch in enumerate(valid_dataloader):
                         if val_idx >= 1:  # Limit to 5 validation samples to avoid too many images
