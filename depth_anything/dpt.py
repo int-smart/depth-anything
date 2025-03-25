@@ -432,6 +432,7 @@ if __name__ == '__main__':
         for batch_idx, batch in enumerate(train_dataloader):
             if batch_idx > 0 and batch_idx % 1000 == 0:
                 model.eval()
+                validation_losses = []
                 with torch.no_grad():
                     for val_idx, val_batch in enumerate(valid_dataloader):
                         if val_idx >= 1:  # Limit to 5 validation samples to avoid too many images
@@ -443,6 +444,7 @@ if __name__ == '__main__':
                         depth = depth.to(device)
 
                         pred, loss = model(image, depth)
+                        validation_losses.append(loss.item())
                         # Save pred as image
                         # Process each image in the batch
                         for i in range(image.shape[0]):
@@ -536,6 +538,7 @@ if __name__ == '__main__':
                 'optimizer_state_dict': optimizer.state_dict(),
                 'scheduler_state_dict': scheduler.state_dict(),
                 'loss': loss_accum.item(),
+                'validation_losses': validation_losses if validation_losses else None,
             }
 
             torch.save(checkpoint, f'checkpoints/model_epoch_{epoch}.pt')
