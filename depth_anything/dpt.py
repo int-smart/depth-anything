@@ -2,6 +2,7 @@ import argparse
 import matplotlib.pyplot as plt
 import numpy as np
 from PIL import Image
+import time
 import os
 import torch
 import torch.nn as nn
@@ -457,6 +458,7 @@ if __name__ == '__main__':
         if ddp and hasattr(train_dataloader, 'sampler') and hasattr(train_dataloader.sampler, 'set_epoch'):
             train_dataloader.sampler.set_epoch(epoch)
         for batch_idx, batch in enumerate(train_dataloader):
+            start_time = time.time()
             if batch_idx > 0 and batch_idx % 1000 == 0:
                 model.eval()
                 with torch.no_grad():
@@ -552,9 +554,11 @@ if __name__ == '__main__':
             
             optimizer.step()
             scheduler.step()
+            if device_type == "cuda":
+                torch.cuda.synchronize() # wait for the GPU to finish work
+            end_time = time.time()
             if master_process:
-                print(f"Epoch: {epoch}, Batch: {batch_idx}, Loss: {loss_accum.item():.4f}, norm: {norm:.4f}")
-        
+                print(f"Epoch: {epoch}, Batch: {batch_idx}, Loss: {loss_accum.item():.4f}, norm: {norm:.4f}, time {end_time - start_time:.4f}s")
         # Save checkpoint
         if master_process and (epoch % 100 == 0 or epoch == max_epochs-1):
             checkpoint = {
