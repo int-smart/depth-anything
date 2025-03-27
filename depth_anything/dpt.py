@@ -302,7 +302,8 @@ def configure_optimizer(model, learning_rate, weight_decay, device_type, max_epo
         print(f"num fast learning parameter tensors: {len(fast_learn_params)}, with {num_fast_params:,} parameters")
     fused_available = "fused" in inspect.signature(torch.optim.AdamW).parameters
     use_fused = fused_available and device_type == "cuda"
-    use_fused = False
+    if ddp:
+        use_fused = False
     if master_process:
         print(f"using fused AdamW: {use_fused}")
     optim = torch.optim.AdamW(
@@ -315,7 +316,7 @@ def configure_optimizer(model, learning_rate, weight_decay, device_type, max_epo
             return 0.1 + 0.9 * (epoch / warmup_epochs)
         else:
             # Cosine annealing
-            progress = (epoch - warmup_epochs) / (max_epochs - warmup_epochs)
+            progress = (min(epoch, max_epochs) - warmup_epochs) / (max_epochs - warmup_epochs)
             return min_lr_ratio + 0.5 * (1.0 - min_lr_ratio) * (1 + math.cos(math.pi * progress))
 
     # Create scheduler with the lambda function
@@ -430,8 +431,9 @@ if __name__ == '__main__':
     model.to(device)
     if ddp:
         model = DDP(model, device_ids=[ddp_local_rank], find_unused_parameters=True)
+    else:
+        model = torch.compile(model)
     raw_model = model.module if ddp else model  # always contains the "raw" unwrapped model
-    # model = torch.compile(model)
     optimizer, scheduler = configure_optimizer(raw_model, 5e-5, 0.1, device_type, max_epochs=max_steps, min_lr_ratio=0.1, warmup_epochs=warmup_steps)
     # Create a SummaryWriter instance
     writer = SummaryWriter(log_dir="runs/depth_anything_experiment")
@@ -459,7 +461,7 @@ if __name__ == '__main__':
             train_dataloader.sampler.set_epoch(epoch)
         for batch_idx, batch in enumerate(train_dataloader):
             start_time = time.time()
-            if batch_idx > 0 and batch_idx % 10 == 0:
+            if batch_idx > 0 and batch_idx % 1000 == 0:
                 model.eval()
                 with torch.no_grad():
                     for val_idx, val_batch in enumerate(valid_dataloader):
