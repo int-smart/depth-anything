@@ -459,7 +459,7 @@ if __name__ == '__main__':
             train_dataloader.sampler.set_epoch(epoch)
         for batch_idx, batch in enumerate(train_dataloader):
             start_time = time.time()
-            if batch_idx > 0 and batch_idx % 1000 == 0:
+            if batch_idx > 0 and batch_idx % 10 == 0:
                 model.eval()
                 with torch.no_grad():
                     for val_idx, val_batch in enumerate(valid_dataloader):
