@@ -431,8 +431,8 @@ if __name__ == '__main__':
     model.to(device)
     if ddp:
         model = DDP(model, device_ids=[ddp_local_rank], find_unused_parameters=True)
-    else:
-        model = torch.compile(model)
+    # else:
+        # model = torch.compile(model)
     raw_model = model.module if ddp else model  # always contains the "raw" unwrapped model
     optimizer, scheduler = configure_optimizer(raw_model, 5e-5, 0.1, device_type, max_epochs=max_steps, min_lr_ratio=0.1, warmup_epochs=warmup_steps)
     # Create a SummaryWriter instance
