@@ -450,7 +450,7 @@ if __name__ == '__main__':
         scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
         
         # Get the epoch number
-        epoch = checkpoint['epoch']
+        epoch = checkpoint['epoch'] + 1
     
     while epoch < max_epochs:
         # Add this line to set the epoch for the sampler
